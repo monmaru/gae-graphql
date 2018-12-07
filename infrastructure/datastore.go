@@ -50,7 +50,7 @@ func (b *BlogDatastore) CreateBlog(ctx context.Context, blog *model.Blog) (*mode
 	return blog, nil
 }
 
-func (p *BlogDatastore) NewQuery() repository.Query {
+func (b *BlogDatastore) NewQuery() repository.Query {
 	return &QueryImpl{query: datastore.NewQuery("Blog")}
 }
 
