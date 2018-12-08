@@ -6,14 +6,13 @@ import (
 )
 
 // NewSchema ...
-func NewSchema(userRepo repository.UserRepository, blogRepo repository.BlogRepository) graphql.Schema {
+func NewSchema(userRepo repository.UserRepository, blogRepo repository.BlogRepository) (graphql.Schema, error) {
 	resolver := &graphQLResolver{
 		userRepo: userRepo,
 		blogRepo: blogRepo,
 	}
-	var schema, _ = graphql.NewSchema(graphql.SchemaConfig{
+	return graphql.NewSchema(graphql.SchemaConfig{
 		Query:    newRootQuery(resolver),
 		Mutation: newRootMutation(resolver),
 	})
-	return schema
 }

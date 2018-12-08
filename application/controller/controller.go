@@ -1,19 +1,24 @@
-package application
+package controller
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"net/http"
 
 	"github.com/graphql-go/graphql"
-	"github.com/monmaru/gae-graphql/application/gql"
-	"github.com/monmaru/gae-graphql/infrastructure"
-	"google.golang.org/appengine"
 )
 
-func GraphQLHandler(w http.ResponseWriter, r *http.Request) {
-	ctx := appengine.NewContext(r)
+type GraphQLController struct {
+	schema graphql.Schema
+}
+
+func New(schema graphql.Schema) *GraphQLController {
+	return &GraphQLController{schema: schema}
+}
+
+func (c *GraphQLController) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	body, err := ioutil.ReadAll(r.Body)
 	if err != nil {
 		writeJSON(
@@ -24,11 +29,9 @@ func GraphQLHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	result := graphql.Do(graphql.Params{
-		Schema: gql.NewSchema(
-			&infrastructure.UserDatastore{},
-			&infrastructure.BlogDatastore{}),
+		Schema:        c.schema,
 		RequestString: string(body),
-		Context:       ctx,
+		Context:       context.Background(),
 	})
 
 	if len(result.Errors) > 0 {

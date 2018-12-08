@@ -5,21 +5,32 @@ import (
 	"errors"
 	"strconv"
 
+	"cloud.google.com/go/datastore"
 	"github.com/monmaru/gae-graphql/domain/model"
 	"github.com/monmaru/gae-graphql/domain/repository"
-	"google.golang.org/appengine/datastore"
 )
 
-type UserDatastore struct{}
+type UserDatastore struct {
+	client *datastore.Client
+}
+
+func NewUserDatastore(projID string) (*UserDatastore, error) {
+	ctx := context.Background()
+	client, err := datastore.NewClient(ctx, projID)
+	if err != nil {
+		return nil, err
+	}
+	return &UserDatastore{client: client}, nil
+}
 
 func (u *UserDatastore) CreateUser(ctx context.Context, user *model.User) (*model.User, error) {
-	key := datastore.NewIncompleteKey(ctx, "User", nil)
-	generatedKey, err := datastore.Put(ctx, key, user)
+	key := datastore.IncompleteKey("User", nil)
+	generatedKey, err := u.client.Put(ctx, key, user)
 	if err != nil {
 		return nil, err
 	}
 
-	user.ID = strconv.FormatInt(generatedKey.IntID(), 10)
+	user.ID = strconv.FormatInt(generatedKey.ID, 10)
 	return user, nil
 }
 
@@ -30,32 +41,47 @@ func (u *UserDatastore) GetUser(ctx context.Context, strID string) (*model.User,
 	}
 
 	user := &model.User{ID: strID}
-	key := datastore.NewKey(ctx, "User", "", id, nil)
-	if err := datastore.Get(ctx, key, user); err != nil {
+	key := datastore.IDKey("User", id, nil)
+	if err := u.client.Get(ctx, key, user); err != nil {
 		return nil, errors.New("User not found")
 	}
 	return user, nil
 }
 
-type BlogDatastore struct{}
+type BlogDatastore struct {
+	client *datastore.Client
+}
+
+func NewBlogDatastore(projID string) (*BlogDatastore, error) {
+	ctx := context.Background()
+	client, err := datastore.NewClient(ctx, projID)
+	if err != nil {
+		return nil, err
+	}
+	return &BlogDatastore{client: client}, nil
+}
 
 func (b *BlogDatastore) CreateBlog(ctx context.Context, blog *model.Blog) (*model.Blog, error) {
-	key := datastore.NewIncompleteKey(ctx, "Blog", nil)
-	generatedKey, err := datastore.Put(ctx, key, blog)
+	key := datastore.IncompleteKey("Blog", nil)
+	generatedKey, err := b.client.Put(ctx, key, blog)
 	if err != nil {
 		return nil, err
 	}
 
-	blog.ID = strconv.FormatInt(generatedKey.IntID(), 10)
+	blog.ID = strconv.FormatInt(generatedKey.ID, 10)
 	return blog, nil
 }
 
 func (b *BlogDatastore) NewQuery() repository.Query {
-	return &QueryImpl{query: datastore.NewQuery("Blog")}
+	return &QueryImpl{
+		query:  datastore.NewQuery("Blog"),
+		client: b.client,
+	}
 }
 
 type QueryImpl struct {
-	query *datastore.Query
+	query  *datastore.Query
+	client *datastore.Client
 }
 
 func (q *QueryImpl) Limit(limit int) repository.Query {
@@ -79,13 +105,13 @@ func (q *QueryImpl) Filter(filterStr string, value interface{}) repository.Query
 
 func (q *QueryImpl) GetAll(ctx context.Context) (*model.BlogList, error) {
 	var result model.BlogList
-	keys, err := q.query.GetAll(ctx, &result.Nodes)
+	keys, err := q.client.GetAll(ctx, q.query, &result.Nodes)
 	if err != nil {
 		return &result, err
 	}
 
 	for i, key := range keys {
-		result.Nodes[i].ID = strconv.FormatInt(key.IntID(), 10)
+		result.Nodes[i].ID = strconv.FormatInt(key.ID, 10)
 	}
 	result.TotalCount = len(result.Nodes)
 	return &result, nil
