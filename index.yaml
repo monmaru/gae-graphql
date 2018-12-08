@@ -1,0 +1,7 @@
+indexes:
+
+- kind: Blog
+  properties:
+  - name: UserID
+  - name: CreatedAt
+    direction: desc
