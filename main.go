@@ -6,6 +6,7 @@ import (
 	"os"
 
 	"github.com/gorilla/mux"
+	"github.com/graphql-go/handler"
 	"github.com/monmaru/gae-graphql/application/controller"
 	"github.com/monmaru/gae-graphql/application/gql"
 	"github.com/monmaru/gae-graphql/infrastructure"
@@ -21,9 +22,15 @@ func main() {
 	exitIfError(err)
 
 	schema, _ := gql.NewSchema(ud, bd)
+	h := handler.New(&handler.Config{
+		Schema:   &schema,
+		Pretty:   true,
+		GraphiQL: true,
+	})
 
 	r := mux.NewRouter()
-	r.Methods("POST").Path("/graphql").Handler(controller.New(schema))
+	r.Path("/api/graphql").Handler(controller.New(schema)).Methods("POST")
+	r.Path("/graphiql").Handler(h)
 	http.Handle("/", r)
 	appengine.Main()
 }
