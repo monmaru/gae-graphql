@@ -9,8 +9,10 @@ import (
 	"github.com/monmaru/gae-graphql/interfaces/handler"
 )
 
-func New(schema *graphql.Schema, usecase usecase.GraphQLUsecase) http.Handler {
+func Route(schema *graphql.Schema) http.Handler {
 	router := mux.NewRouter()
+	usecase := &usecase.GraphQLInteractor{Schema: *schema}
+	router.Path("/ping").HandlerFunc(handler.Pong).Methods(http.MethodGet)
 	router.Path("/api/graphql").Handler(handler.API(usecase)).Methods(http.MethodPost)
 	router.Path("/playground").Handler(handler.Playground(schema))
 	return router
