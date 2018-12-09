@@ -36,13 +36,13 @@ func (r *graphQLResolver) createUser(params graphql.ResolveParams) (interface{},
 		Name:  name,
 		EMail: email,
 	}
-	return r.userRepo.CreateUser(ctx, user)
+	return r.userRepo.Create(ctx, user)
 }
 
 func (r *graphQLResolver) queryUser(params graphql.ResolveParams) (interface{}, error) {
 	ctx := params.Context
 	if strID, ok := params.Args["id"].(string); ok {
-		return r.userRepo.GetUser(ctx, strID)
+		return r.userRepo.Get(ctx, strID)
 	}
 	return model.User{}, nil
 }
@@ -58,7 +58,7 @@ func (r *graphQLResolver) createBlog(params graphql.ResolveParams) (interface{},
 		Content:   content,
 		CreatedAt: time.Now().UTC(),
 	}
-	return r.blogRepo.CreateBlog(ctx, blog)
+	return r.blogRepo.Create(ctx, blog)
 }
 
 func (r *graphQLResolver) queryBlogs(params graphql.ResolveParams) (interface{}, error) {

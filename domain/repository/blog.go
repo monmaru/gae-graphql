@@ -6,13 +6,8 @@ import (
 	"github.com/monmaru/gae-graphql/domain/model"
 )
 
-type UserRepository interface {
-	CreateUser(ctx context.Context, user *model.User) (*model.User, error)
-	GetUser(ctx context.Context, strID string) (*model.User, error)
-}
-
 type BlogRepository interface {
-	CreateBlog(ctx context.Context, blog *model.Blog) (*model.Blog, error)
+	Create(ctx context.Context, blog *model.Blog) (*model.Blog, error)
 	NewQuery() Query
 }
 

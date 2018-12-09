@@ -5,42 +5,21 @@ import (
 	"net/http"
 	"os"
 
-	"github.com/gorilla/mux"
-	"github.com/graphql-go/handler"
-	"github.com/monmaru/gae-graphql/application/controller"
 	"github.com/monmaru/gae-graphql/application/gql"
-	"github.com/monmaru/gae-graphql/infrastructure"
+	"github.com/monmaru/gae-graphql/application/usecase"
+	"github.com/monmaru/gae-graphql/infrastructure/datastore"
+	"github.com/monmaru/gae-graphql/interfaces/router"
 )
 
 func main() {
-	if err := run(); err != nil {
+	projID := os.Getenv("PROJECT_ID")
+	ud := &datastore.UserDatastore{ProjID: projID}
+	bd := &datastore.BlogDatastore{ProjID: projID}
+	schema, _ := gql.NewSchema(ud, bd)
+	usecase := &usecase.GraphQLInteractor{Schema: schema}
+	router := router.New(&schema, usecase)
+	http.Handle("/", router)
+	if err := http.ListenAndServe(":8080", router); err != nil {
 		log.Fatal(err)
 	}
-}
-
-func run() error {
-	projID := os.Getenv("PROJECT_ID")
-	ud, err := infrastructure.NewUserDatastore(projID)
-	if err != nil {
-		return err
-	}
-
-	bd, err := infrastructure.NewBlogDatastore(projID)
-	if err != nil {
-		return err
-	}
-
-	schema, _ := gql.NewSchema(ud, bd)
-	playground := handler.New(&handler.Config{
-		Schema:     &schema,
-		Pretty:     true,
-		GraphiQL:   false,
-		Playground: true,
-	})
-
-	router := mux.NewRouter()
-	router.Path("/api/graphql").Handler(controller.New(schema)).Methods(http.MethodPost)
-	router.Path("/playground").Handler(playground)
-	http.Handle("/", router)
-	return http.ListenAndServe(":8080", router)
 }
