@@ -5,5 +5,5 @@ handlers:
   script: auto
   secure: always
 
-env_variables:
-  PROJECT_ID: your-project-id
+includes:
+- secret.yaml
