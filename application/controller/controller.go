@@ -3,7 +3,6 @@ package controller
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"io/ioutil"
 	"net/http"
 
@@ -21,10 +20,7 @@ func New(schema graphql.Schema) *GraphQLController {
 func (c *GraphQLController) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	body, err := ioutil.ReadAll(r.Body)
 	if err != nil {
-		writeJSON(
-			w,
-			errorResponse{Message: "Invalid request body"},
-			http.StatusBadRequest)
+		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 
@@ -34,22 +30,11 @@ func (c *GraphQLController) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		Context:       context.Background(),
 	})
 
-	if len(result.Errors) > 0 {
-		writeJSON(
-			w,
-			errorResponse{Message: fmt.Sprintf("%+v", result.Errors)},
-			http.StatusBadRequest)
-		return
-	}
-	writeJSON(w, result, http.StatusOK)
+	writeJSON(w, result)
 }
 
-func writeJSON(w http.ResponseWriter, data interface{}, code int) {
+func writeJSON(w http.ResponseWriter, data interface{}) {
 	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(code)
+	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(data)
-}
-
-type errorResponse struct {
-	Message string `json:"message"`
 }
