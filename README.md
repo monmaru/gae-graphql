@@ -1,6 +1,6 @@
 # gae-graphql
 
-## Installation
+## Deploy
 
 ### Create Datastore indexes
 `gcloud datastore indexes create index.yaml`
@@ -8,17 +8,25 @@
 ### Deploy App Engine
 `gcloud app deploy`
 
+## Local debugging
+
+### Running the Cloud Datastore Emulator
+https://cloud.google.com/datastore/docs/tools/datastore-emulator
+
+### Run
+`go run server.go`
+
 ## How to use
 
 ### 1. Creating users
 POST
 ```
 mutation {
-  bob: createUser(name: "Taro", email: "taro@gmail.com") {
+  taro: createUser(name: "Taro", email: "taro@gmail.com") {
     id
     name
   }
-  mark: createUser(name: "Jiro", email: "jiro@gmail.com") {
+  jiro: createUser(name: "Jiro", email: "jiro@gmail.com") {
     id
     name
   }
@@ -47,7 +55,7 @@ mutation {
 }
 ```
 
-### 3. Query posts with limit and offset
+### 3. Query blogs with limit and offset
 POST
 ```
 {
@@ -70,7 +78,7 @@ POST
   user(id: "5715161717407744") {
     name
     email
-    blogs {
+    posts {
       totalCount
       nodes {
         title
@@ -79,5 +87,4 @@ POST
     }
   }
 }
-
 ```
