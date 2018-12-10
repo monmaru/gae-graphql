@@ -7,7 +7,7 @@ func newRootMutation(r resolver) *graphql.Object {
 		Name: "RootMutation",
 		Fields: graphql.Fields{
 			"createUser": &graphql.Field{
-				Type: newUserType(r),
+				Type: newCreateUserInputType(r),
 				Args: graphql.FieldConfigArgument{
 					"name":  &graphql.ArgumentConfig{Type: graphql.NewNonNull(graphql.String)},
 					"email": &graphql.ArgumentConfig{Type: graphql.NewNonNull(graphql.String)},
@@ -15,7 +15,7 @@ func newRootMutation(r resolver) *graphql.Object {
 				Resolve: r.createUser,
 			},
 			"createBlog": &graphql.Field{
-				Type: newBlogType(),
+				Type: newCreateBlogInputType(),
 				Args: graphql.FieldConfigArgument{
 					"userId":  &graphql.ArgumentConfig{Type: graphql.NewNonNull(graphql.String)},
 					"title":   &graphql.ArgumentConfig{Type: graphql.NewNonNull(graphql.String)},

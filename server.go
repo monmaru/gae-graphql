@@ -11,14 +11,20 @@ import (
 )
 
 func main() {
+	if err := register(); err != nil {
+		log.Fatal(err)
+	}
+}
+
+func register() error {
 	projID := os.Getenv("PROJECT_ID")
 	ud := &datastore.UserDatastore{ProjID: projID}
 	bd := &datastore.BlogDatastore{ProjID: projID}
-	schema, _ := gql.NewSchema(ud, bd)
+	schema, err := gql.NewSchema(ud, bd)
+	if err != nil {
+		return err
+	}
 	router := router.Route(&schema)
 	http.Handle("/", router)
-
-	if err := http.ListenAndServe(":8080", router); err != nil {
-		log.Fatal(err)
-	}
+	return http.ListenAndServe(":8080", router)
 }
