@@ -2,6 +2,7 @@ module github.com/monmaru/gae-graphql
 
 require (
 	cloud.google.com/go v0.34.0
+	github.com/google/pprof v0.0.0-20181206194817-3ea8567a2e57 // indirect
 	github.com/googleapis/gax-go v2.0.2+incompatible // indirect
 	github.com/gorilla/mux v1.6.2
 	github.com/graphql-go/graphql v0.7.7
