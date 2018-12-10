@@ -14,6 +14,7 @@ func Route(schema *graphql.Schema) http.Handler {
 	usecase := &usecase.GraphQLInteractor{Schema: *schema}
 	router.Path("/ping").HandlerFunc(handler.Pong).Methods(http.MethodGet)
 	router.Path("/api/graphql").Handler(handler.API(usecase)).Methods(http.MethodPost)
+	router.Path("/graphiql").Handler(handler.GraphiQL(schema))
 	router.Path("/playground").Handler(handler.Playground(schema))
 	return router
 }
