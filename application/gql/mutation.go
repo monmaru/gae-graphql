@@ -2,12 +2,13 @@ package gql
 
 import "github.com/graphql-go/graphql"
 
-func newRootMutation(r resolver) *graphql.Object {
+func newMutation(r resolver) *graphql.Object {
 	return graphql.NewObject(graphql.ObjectConfig{
-		Name: "RootMutation",
+		Name: "Mutation",
 		Fields: graphql.Fields{
 			"createUser": &graphql.Field{
-				Type: newCreateUserInputType(r),
+				Type:        newCreateUserInputType(r),
+				Description: "Add a user",
 				Args: graphql.FieldConfigArgument{
 					"name":  &graphql.ArgumentConfig{Type: graphql.NewNonNull(graphql.String)},
 					"email": &graphql.ArgumentConfig{Type: graphql.NewNonNull(graphql.String)},
@@ -15,7 +16,8 @@ func newRootMutation(r resolver) *graphql.Object {
 				Resolve: r.createUser,
 			},
 			"createBlog": &graphql.Field{
-				Type: newCreateBlogInputType(),
+				Type:        newCreateBlogInputType(),
+				Description: "Add a blog",
 				Args: graphql.FieldConfigArgument{
 					"userId":  &graphql.ArgumentConfig{Type: graphql.NewNonNull(graphql.String)},
 					"title":   &graphql.ArgumentConfig{Type: graphql.NewNonNull(graphql.String)},

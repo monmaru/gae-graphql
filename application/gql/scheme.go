@@ -12,7 +12,7 @@ func NewSchema(userRepo repository.UserRepository, blogRepo repository.BlogRepos
 		blogRepo: blogRepo,
 	}
 	return graphql.NewSchema(graphql.SchemaConfig{
-		Query:    newRootQuery(resolver),
-		Mutation: newRootMutation(resolver),
+		Query:    newQuery(resolver),
+		Mutation: newMutation(resolver),
 	})
 }
