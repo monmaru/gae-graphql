@@ -13,7 +13,7 @@ func newMutation(r resolver) *graphql.Object {
 					"name":  &graphql.ArgumentConfig{Type: graphql.NewNonNull(graphql.String)},
 					"email": &graphql.ArgumentConfig{Type: graphql.NewNonNull(graphql.String)},
 				},
-				Resolve: r.createUser,
+				Resolve: concurrentResolve(r.createUser),
 			},
 			"createBlog": &graphql.Field{
 				Type:        newCreateBlogInputType(),
@@ -23,7 +23,7 @@ func newMutation(r resolver) *graphql.Object {
 					"title":   &graphql.ArgumentConfig{Type: graphql.NewNonNull(graphql.String)},
 					"content": &graphql.ArgumentConfig{Type: graphql.NewNonNull(graphql.String)},
 				},
-				Resolve: r.createBlog,
+				Resolve: concurrentResolve(r.createBlog),
 			},
 		},
 	})

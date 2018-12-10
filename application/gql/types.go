@@ -11,7 +11,7 @@ func newUserType(r resolver) *graphql.Object {
 			"email": &graphql.Field{Type: graphql.String},
 			"posts": makeListField(
 				makeNodeListType("PostList", newPostType()),
-				r.queryBlogsByUser),
+				concurrentResolve(r.queryBlogsByUser)),
 		},
 	})
 }
