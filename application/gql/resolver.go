@@ -1,6 +1,7 @@
 package gql
 
 import (
+	"log"
 	"time"
 
 	"github.com/graphql-go/graphql"
@@ -29,6 +30,7 @@ func newResolver(userRepo repository.UserRepository, blogRepo repository.BlogRep
 }
 
 func (r *graphQLResolver) createUser(params graphql.ResolveParams) (interface{}, error) {
+	log.Print("createUser called")
 	ctx := params.Context
 	name, _ := params.Args["name"].(string)
 	email, _ := params.Args["email"].(string)
@@ -40,6 +42,7 @@ func (r *graphQLResolver) createUser(params graphql.ResolveParams) (interface{},
 }
 
 func (r *graphQLResolver) queryUser(params graphql.ResolveParams) (interface{}, error) {
+	log.Print("queryUser called")
 	ctx := params.Context
 	if strID, ok := params.Args["id"].(string); ok {
 		return r.userRepo.Get(ctx, strID)
@@ -48,6 +51,7 @@ func (r *graphQLResolver) queryUser(params graphql.ResolveParams) (interface{}, 
 }
 
 func (r *graphQLResolver) createBlog(params graphql.ResolveParams) (interface{}, error) {
+	log.Print("createBlog called")
 	ctx := params.Context
 	title, _ := params.Args["title"].(string)
 	content, _ := params.Args["content"].(string)
@@ -62,6 +66,7 @@ func (r *graphQLResolver) createBlog(params graphql.ResolveParams) (interface{},
 }
 
 func (r *graphQLResolver) queryBlogs(params graphql.ResolveParams) (interface{}, error) {
+	log.Print("queryBlogs called")
 	ctx := params.Context
 	query := r.blogRepo.NewQuery()
 	query = query.Order("-CreatedAt")
@@ -75,6 +80,7 @@ func (r *graphQLResolver) queryBlogs(params graphql.ResolveParams) (interface{},
 }
 
 func (r *graphQLResolver) queryBlogsByUser(params graphql.ResolveParams) (interface{}, error) {
+	log.Print("queryBlogsByUser called")
 	ctx := params.Context
 	query := r.blogRepo.NewQuery()
 	query = query.Order("-CreatedAt")
