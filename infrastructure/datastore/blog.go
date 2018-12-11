@@ -10,17 +10,20 @@ import (
 )
 
 type BlogDatastore struct {
-	ProjID string
+	client *datastore.Client
 }
 
-func (b *BlogDatastore) Create(ctx context.Context, blog *model.Blog) (*model.Blog, error) {
-	client, err := datastore.NewClient(ctx, b.ProjID)
+func NewBlogDatastore(projID string) (*BlogDatastore, error) {
+	client, err := newDataStoreClient(context.Background(), projID)
 	if err != nil {
 		return nil, err
 	}
+	return &BlogDatastore{client: client}, nil
+}
 
+func (b *BlogDatastore) Create(ctx context.Context, blog *model.Blog) (*model.Blog, error) {
 	key := datastore.IncompleteKey("Blog", nil)
-	generatedKey, err := client.Put(ctx, key, blog)
+	generatedKey, err := b.client.Put(ctx, key, blog)
 	if err != nil {
 		return nil, err
 	}
@@ -31,13 +34,13 @@ func (b *BlogDatastore) Create(ctx context.Context, blog *model.Blog) (*model.Bl
 
 func (b *BlogDatastore) NewQuery() repository.Query {
 	return &QueryImpl{
-		projID: b.ProjID,
+		client: b.client,
 		query:  datastore.NewQuery("Blog"),
 	}
 }
 
 type QueryImpl struct {
-	projID string
+	client *datastore.Client
 	query  *datastore.Query
 }
 
@@ -61,13 +64,8 @@ func (q *QueryImpl) Filter(filterStr string, value interface{}) repository.Query
 }
 
 func (q *QueryImpl) GetAll(ctx context.Context) (*model.BlogList, error) {
-	client, err := datastore.NewClient(ctx, q.projID)
-	if err != nil {
-		return nil, err
-	}
-
 	var result model.BlogList
-	keys, err := client.GetAll(ctx, q.query, &result.Nodes)
+	keys, err := q.client.GetAll(ctx, q.query, &result.Nodes)
 	if err != nil {
 		return &result, err
 	}

@@ -10,17 +10,20 @@ import (
 )
 
 type UserDatastore struct {
-	ProjID string
+	client *datastore.Client
 }
 
-func (u *UserDatastore) Create(ctx context.Context, user *model.User) (*model.User, error) {
-	client, err := datastore.NewClient(ctx, u.ProjID)
+func NewUserDatastore(projID string) (*UserDatastore, error) {
+	client, err := newDataStoreClient(context.Background(), projID)
 	if err != nil {
 		return nil, err
 	}
+	return &UserDatastore{client: client}, nil
+}
 
+func (u *UserDatastore) Create(ctx context.Context, user *model.User) (*model.User, error) {
 	key := datastore.IncompleteKey("User", nil)
-	generatedKey, err := client.Put(ctx, key, user)
+	generatedKey, err := u.client.Put(ctx, key, user)
 	if err != nil {
 		return nil, err
 	}
@@ -30,11 +33,6 @@ func (u *UserDatastore) Create(ctx context.Context, user *model.User) (*model.Us
 }
 
 func (u *UserDatastore) Get(ctx context.Context, strID string) (*model.User, error) {
-	client, err := datastore.NewClient(ctx, u.ProjID)
-	if err != nil {
-		return nil, err
-	}
-
 	id, err := strconv.ParseInt(strID, 10, 64)
 	if err != nil {
 		return nil, errors.New("Invalid id")
@@ -42,7 +40,7 @@ func (u *UserDatastore) Get(ctx context.Context, strID string) (*model.User, err
 
 	user := &model.User{ID: strID}
 	key := datastore.IDKey("User", id, nil)
-	if err := client.Get(ctx, key, user); err != nil {
+	if err := u.client.Get(ctx, key, user); err != nil {
 		return nil, errors.New("User not found")
 	}
 	return user, nil

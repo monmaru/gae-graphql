@@ -28,12 +28,21 @@ func register() error {
 	}
 
 	projID := os.Getenv("PROJECT_ID")
-	ud := &datastore.UserDatastore{ProjID: projID}
-	bd := &datastore.BlogDatastore{ProjID: projID}
+	ud, err := datastore.NewUserDatastore(projID)
+	if err != nil {
+		return err
+	}
+
+	bd, err := datastore.NewBlogDatastore(projID)
+	if err != nil {
+		return err
+	}
+
 	schema, err := gql.NewSchema(ud, bd)
 	if err != nil {
 		return err
 	}
+
 	router := router.Route(&schema)
 	http.Handle("/", router)
 
