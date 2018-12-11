@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"log"
 	"net/http"
 	"os"
@@ -35,5 +36,13 @@ func register() error {
 	}
 	router := router.Route(&schema)
 	http.Handle("/", router)
-	return http.ListenAndServe(":8080", router)
+
+	port := os.Getenv("PORT")
+	if port == "" {
+		port = "8080"
+		log.Printf("Defaulting to port %s", port)
+	}
+
+	log.Printf("Listening on port %s", port)
+	return http.ListenAndServe(fmt.Sprintf(":%s", port), nil)
 }
