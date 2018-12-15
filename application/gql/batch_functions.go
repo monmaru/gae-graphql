@@ -15,9 +15,42 @@ import (
 type BatchKey string
 
 const (
+	GetUsersKey    BatchKey = "GetUsersBatchKey"
 	CreateUsersKey BatchKey = "CreateUsersBatchKey"
 	CreateBlogsKey BatchKey = "CreateBlogsBatchKey"
 )
+
+func GetUsersBatchFunc(ur repository.UserRepository) dataloader.BatchFunc {
+	return func(ctx context.Context, keys dataloader.Keys) []*dataloader.Result {
+		defer profile.Duration(time.Now(), "[GetUsersBatchFunc]")
+		var strIDs []string
+		for _, key := range keys {
+			strID, ok := key.Raw().(string)
+			if !ok {
+				log.Println("invalid key value")
+				return handleError(errors.New("Invalid key value"))
+			}
+			strIDs = append(strIDs, strID)
+		}
+
+		users, err := ur.GetMulti(ctx, strIDs)
+		if err != nil {
+			return handleError(err)
+		}
+
+		var results []*dataloader.Result
+		for _, user := range users {
+			result := dataloader.Result{
+				Data:  user,
+				Error: nil,
+			}
+			results = append(results, &result)
+		}
+
+		log.Printf("[GetUsersBatchFunc] batch size: %d", len(results))
+		return results
+	}
+}
 
 func CreateUsersBatchFunc(ur repository.UserRepository) dataloader.BatchFunc {
 	return func(ctx context.Context, keys dataloader.Keys) []*dataloader.Result {

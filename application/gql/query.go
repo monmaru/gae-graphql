@@ -12,9 +12,9 @@ func newQuery(r resolver) *graphql.Object {
 				Args: graphql.FieldConfigArgument{
 					"id": &graphql.ArgumentConfig{Type: graphql.NewNonNull(graphql.String)},
 				},
-				Resolve: concurrentResolve(r.queryUser),
+				Resolve: r.getUsersBatch,
 			},
-			"blogs": makeListField(makeNodeListType("BlogList", newBlogType()), r.queryBlogs),
+			"blogs": makeListField(makeNodeListType("BlogList", newBlogType()), concurrentResolve(r.queryBlogs)),
 		},
 	})
 }

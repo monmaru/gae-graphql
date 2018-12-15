@@ -26,6 +26,10 @@ func (i *Injector) Inject(next http.Handler) http.Handler {
 		ctx := r.Context()
 		ctx = context.WithValue(
 			ctx,
+			gql.GetUsersKey,
+			dataloader.NewBatchedLoader(gql.GetUsersBatchFunc(i.ur)))
+		ctx = context.WithValue(
+			ctx,
 			gql.CreateUsersKey,
 			dataloader.NewBatchedLoader(gql.CreateUsersBatchFunc(i.ur)))
 		ctx = context.WithValue(

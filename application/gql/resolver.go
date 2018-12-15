@@ -6,58 +6,76 @@ import (
 
 	"github.com/graph-gophers/dataloader"
 	"github.com/graphql-go/graphql"
+
 	"github.com/monmaru/gae-graphql/domain/model"
 	"github.com/monmaru/gae-graphql/domain/repository"
 	"github.com/monmaru/gae-graphql/library/profile"
 )
 
 type resolver interface {
-	queryUser(params graphql.ResolveParams) (interface{}, error)
+	getUser(params graphql.ResolveParams) (interface{}, error)
 	queryBlogs(params graphql.ResolveParams) (interface{}, error)
 	queryBlogsByUser(params graphql.ResolveParams) (interface{}, error)
 	createUser(params graphql.ResolveParams) (interface{}, error)
 	createBlog(params graphql.ResolveParams) (interface{}, error)
+	getUsersBatch(params graphql.ResolveParams) (interface{}, error)
 	createUsersBatch(params graphql.ResolveParams) (interface{}, error)
 	createBlogsBatch(params graphql.ResolveParams) (interface{}, error)
 }
 
-type userKey struct {
+type getUserKey struct {
+	strID string
+}
+
+func newGetUserKey(strID string) *getUserKey {
+	return &getUserKey{strID: strID}
+}
+
+func (uk *getUserKey) String() string {
+	return uk.strID
+}
+
+func (uk *getUserKey) Raw() interface{} {
+	return uk.strID
+}
+
+type createUserKey struct {
 	key  string
 	user *model.User
 }
 
-func newUserKey(key string, user *model.User) *userKey {
-	return &userKey{
+func newCreateUserKey(key string, user *model.User) *createUserKey {
+	return &createUserKey{
 		key:  key,
 		user: user,
 	}
 }
 
-func (uk *userKey) String() string {
+func (uk *createUserKey) String() string {
 	return uk.key
 }
 
-func (rk *userKey) Raw() interface{} {
-	return rk.user
+func (uk *createUserKey) Raw() interface{} {
+	return uk.user
 }
 
-type blogKey struct {
+type createBlogKey struct {
 	key  string
 	blog *model.Blog
 }
 
-func newBlogKey(key string, blog *model.Blog) *blogKey {
-	return &blogKey{
+func newCreateBlogKey(key string, blog *model.Blog) *createBlogKey {
+	return &createBlogKey{
 		key:  key,
 		blog: blog,
 	}
 }
 
-func (bk *blogKey) String() string {
+func (bk *createBlogKey) String() string {
 	return bk.key
 }
 
-func (bk *blogKey) Raw() interface{} {
+func (bk *createBlogKey) Raw() interface{} {
 	return bk.blog
 }
 
@@ -85,8 +103,8 @@ func (r *graphQLResolver) createUser(params graphql.ResolveParams) (interface{},
 	return r.ur.Create(ctx, user)
 }
 
-func (r *graphQLResolver) queryUser(params graphql.ResolveParams) (interface{}, error) {
-	defer profile.Duration(time.Now(), "[graphQLResolver.queryUser]")
+func (r *graphQLResolver) getUser(params graphql.ResolveParams) (interface{}, error) {
+	defer profile.Duration(time.Now(), "[graphQLResolver.getUser]")
 	ctx := params.Context
 	if strID, ok := params.Args["id"].(string); ok {
 		return r.ur.Get(ctx, strID)
@@ -140,8 +158,28 @@ func (r *graphQLResolver) queryBlogsByUser(params graphql.ResolveParams) (interf
 	return query.GetAll(ctx)
 }
 
+func (r *graphQLResolver) getUsersBatch(params graphql.ResolveParams) (interface{}, error) {
+	defer profile.Duration(time.Now(), "[graphQLResolver.getUsersBatch]")
+	strID, ok := params.Args["id"].(string)
+	if !ok {
+		return nil, errors.New("invalid id")
+	}
+
+	key := newGetUserKey(strID)
+	v := params.Context.Value(GetUsersKey)
+	loader, ok := v.(*dataloader.Loader)
+	if !ok {
+		return nil, errors.New("loader is empty")
+	}
+
+	thunk := loader.Load(params.Context, key)
+	return func() (interface{}, error) {
+		return thunk()
+	}, nil
+}
+
 func (r *graphQLResolver) createUsersBatch(params graphql.ResolveParams) (interface{}, error) {
-	defer profile.Duration(time.Now(), "[graphQLResolver.createUsers]")
+	defer profile.Duration(time.Now(), "[graphQLResolver.createUsersBatch]")
 	name, _ := params.Args["name"].(string)
 	email, _ := params.Args["email"].(string)
 	user := &model.User{
@@ -149,7 +187,7 @@ func (r *graphQLResolver) createUsersBatch(params graphql.ResolveParams) (interf
 		EMail: email,
 	}
 
-	key := newUserKey(user.Name+user.EMail, user)
+	key := newCreateUserKey(user.Name+user.EMail, user)
 	v := params.Context.Value(CreateUsersKey)
 	loader, ok := v.(*dataloader.Loader)
 	if !ok {
@@ -163,7 +201,7 @@ func (r *graphQLResolver) createUsersBatch(params graphql.ResolveParams) (interf
 }
 
 func (r *graphQLResolver) createBlogsBatch(params graphql.ResolveParams) (interface{}, error) {
-	defer profile.Duration(time.Now(), "[graphQLResolver.createBlogs]")
+	defer profile.Duration(time.Now(), "[graphQLResolver.createBlogsBatch]")
 	title, _ := params.Args["title"].(string)
 	content, _ := params.Args["content"].(string)
 	userID, _ := params.Args["userId"].(string)
@@ -174,7 +212,7 @@ func (r *graphQLResolver) createBlogsBatch(params graphql.ResolveParams) (interf
 		CreatedAt: time.Now().UTC(),
 	}
 
-	key := newBlogKey(blog.UserID+blog.Title, blog)
+	key := newCreateBlogKey(blog.UserID+blog.Title, blog)
 	v := params.Context.Value(CreateBlogsKey)
 	loader, ok := v.(*dataloader.Loader)
 	if !ok {

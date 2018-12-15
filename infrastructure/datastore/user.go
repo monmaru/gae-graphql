@@ -64,3 +64,30 @@ func (u *UserDatastore) Get(ctx context.Context, strID string) (*model.User, err
 	}
 	return user, nil
 }
+
+func (u *UserDatastore) GetMulti(ctx context.Context, strIDs []string) ([]*model.User, error) {
+	var keys []*datastore.Key
+	for _, strID := range strIDs {
+		id, err := strconv.ParseInt(strID, 10, 64)
+		if err != nil {
+			return nil, errors.New("Invalid id")
+		}
+		key := datastore.IDKey(u.kind, id, nil)
+		keys = append(keys, key)
+	}
+
+	var temp = make([]*model.User, len(keys))
+	if err := u.client.GetMulti(ctx, keys, temp); err != nil {
+		return nil, errors.New("User not found")
+	}
+
+	var users []*model.User
+	for i := 0; i < len(temp); i++ {
+		if temp[i] == nil {
+			continue
+		}
+		temp[i].ID = strIDs[i]
+		users = append(users, temp[i])
+	}
+	return users, nil
+}
