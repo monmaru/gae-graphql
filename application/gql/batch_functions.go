@@ -7,7 +7,6 @@ import (
 	"time"
 
 	"github.com/graph-gophers/dataloader"
-
 	"github.com/monmaru/gae-graphql/domain/model"
 	"github.com/monmaru/gae-graphql/domain/repository"
 	"github.com/monmaru/gae-graphql/library/profile"
