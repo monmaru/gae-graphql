@@ -52,31 +52,31 @@ func WithContext(ctx context.Context, r *http.Request) context.Context {
 }
 
 func Criticalf(ctx context.Context, format string, args ...interface{}) {
-	printf(logging.Critical, ctx, format, args...)
+	printf(ctx, logging.Critical, format, args...)
 }
 
 func Debugf(ctx context.Context, format string, args ...interface{}) {
-	printf(logging.Debug, ctx, format, args...)
+	printf(ctx, logging.Debug, format, args...)
 }
 
 func Errorf(ctx context.Context, format string, args ...interface{}) {
-	printf(logging.Error, ctx, format, args...)
+	printf(ctx, logging.Error, format, args...)
 }
 
 func Infof(ctx context.Context, format string, args ...interface{}) {
-	printf(logging.Info, ctx, format, args...)
+	printf(ctx, logging.Info, format, args...)
 }
 
 func Warningf(ctx context.Context, format string, args ...interface{}) {
-	printf(logging.Warning, ctx, format, args...)
+	printf(ctx, logging.Warning, format, args...)
 }
 
 func Duration(ctx context.Context, invocation time.Time, name string) {
 	elapsed := time.Since(invocation)
-	printf(logging.Info, ctx, fmt.Sprintf("%s lasted %s", name, elapsed))
+	printf(ctx, logging.Info, fmt.Sprintf("%s lasted %s", name, elapsed))
 }
 
-func printf(severity logging.Severity, ctx context.Context, format string, args ...interface{}) {
+func printf(ctx context.Context, severity logging.Severity, format string, args ...interface{}) {
 	if localDev {
 		log.Printf(format, args...)
 		return
