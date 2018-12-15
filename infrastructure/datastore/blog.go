@@ -11,6 +11,7 @@ import (
 
 type BlogDatastore struct {
 	client *datastore.Client
+	kind   string
 }
 
 func NewBlogDatastore(projID string) (*BlogDatastore, error) {
@@ -18,11 +19,11 @@ func NewBlogDatastore(projID string) (*BlogDatastore, error) {
 	if err != nil {
 		return nil, err
 	}
-	return &BlogDatastore{client: client}, nil
+	return &BlogDatastore{client: client, kind: "Blog"}, nil
 }
 
 func (b *BlogDatastore) Create(ctx context.Context, blog *model.Blog) (*model.Blog, error) {
-	key := datastore.IncompleteKey("Blog", nil)
+	key := datastore.IncompleteKey(b.kind, nil)
 	generatedKey, err := b.client.Put(ctx, key, blog)
 	if err != nil {
 		return nil, err
@@ -32,10 +33,28 @@ func (b *BlogDatastore) Create(ctx context.Context, blog *model.Blog) (*model.Bl
 	return blog, nil
 }
 
+func (b *BlogDatastore) CreateMulti(ctx context.Context, blogs []*model.Blog) ([]*model.Blog, error) {
+	var keys []*datastore.Key
+	for i := 0; i < len(blogs); i++ {
+		key := datastore.IncompleteKey(b.kind, nil)
+		keys = append(keys, key)
+	}
+
+	generatedKeys, err := b.client.PutMulti(ctx, keys, blogs)
+	if err != nil {
+		return nil, err
+	}
+
+	for i := 0; i < len(blogs); i++ {
+		blogs[i].ID = strconv.FormatInt(generatedKeys[i].ID, 10)
+	}
+	return blogs, nil
+}
+
 func (b *BlogDatastore) NewQuery() repository.Query {
 	return &QueryImpl{
 		client: b.client,
-		query:  datastore.NewQuery("Blog"),
+		query:  datastore.NewQuery(b.kind),
 	}
 }
 

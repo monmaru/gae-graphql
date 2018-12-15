@@ -16,7 +16,7 @@ func newUserType(r resolver) *graphql.Object {
 	})
 }
 
-func newCreateUserInputType(r resolver) *graphql.Object {
+func newCreateUserInputType() *graphql.Object {
 	return graphql.NewObject(graphql.ObjectConfig{
 		Name: "CreateUserInput",
 		Fields: graphql.Fields{

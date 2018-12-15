@@ -12,14 +12,18 @@ type GraphQLUsecase interface {
 	Do(ctx context.Context, body string) interface{}
 }
 
-type GraphQLInteractor struct {
-	Schema graphql.Schema
+func NewGraphQLUsecae(scheme graphql.Schema) GraphQLUsecase {
+	return &graphQLInteractor{schema: scheme}
 }
 
-func (i *GraphQLInteractor) Do(ctx context.Context, body string) interface{} {
-	defer profile.Duration(time.Now(), "GraphQLInteractor.Do")
+type graphQLInteractor struct {
+	schema graphql.Schema
+}
+
+func (i *graphQLInteractor) Do(ctx context.Context, body string) interface{} {
+	defer profile.Duration(time.Now(), "[graphQLInteractor.Do]")
 	return graphql.Do(graphql.Params{
-		Schema:        i.Schema,
+		Schema:        i.schema,
 		RequestString: string(body),
 		Context:       ctx,
 	})

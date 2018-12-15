@@ -8,7 +8,6 @@ import (
 	"strconv"
 
 	"cloud.google.com/go/profiler"
-	"github.com/monmaru/gae-graphql/application/gql"
 	"github.com/monmaru/gae-graphql/infrastructure/datastore"
 	"github.com/monmaru/gae-graphql/interfaces/router"
 )
@@ -38,12 +37,11 @@ func register() error {
 		return err
 	}
 
-	schema, err := gql.NewSchema(ud, bd)
+	router, err := router.Build(ud, bd)
 	if err != nil {
 		return err
 	}
 
-	router := router.Route(&schema)
 	http.Handle("/", router)
 
 	port := os.Getenv("PORT")

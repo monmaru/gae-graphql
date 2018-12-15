@@ -5,12 +5,8 @@ import (
 	"github.com/monmaru/gae-graphql/domain/repository"
 )
 
-// NewSchema ...
-func NewSchema(userRepo repository.UserRepository, blogRepo repository.BlogRepository) (graphql.Schema, error) {
-	resolver := &graphQLResolver{
-		userRepo: userRepo,
-		blogRepo: blogRepo,
-	}
+func NewSchema(ur repository.UserRepository, br repository.BlogRepository) (graphql.Schema, error) {
+	resolver := newResolver(ur, br)
 	return graphql.NewSchema(graphql.SchemaConfig{
 		Query:    newQuery(resolver),
 		Mutation: newMutation(resolver),

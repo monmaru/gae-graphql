@@ -8,6 +8,7 @@ import (
 
 type BlogRepository interface {
 	Create(ctx context.Context, blog *model.Blog) (*model.Blog, error)
+	CreateMulti(ctx context.Context, blogs []*model.Blog) ([]*model.Blog, error)
 	NewQuery() Query
 }
 
