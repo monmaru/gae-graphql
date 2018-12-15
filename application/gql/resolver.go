@@ -6,7 +6,6 @@ import (
 
 	"github.com/graph-gophers/dataloader"
 	"github.com/graphql-go/graphql"
-
 	"github.com/monmaru/gae-graphql/domain/model"
 	"github.com/monmaru/gae-graphql/domain/repository"
 	"github.com/monmaru/gae-graphql/library/profile"
