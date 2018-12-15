@@ -8,8 +8,12 @@ import (
 	"strconv"
 
 	"cloud.google.com/go/profiler"
+	"contrib.go.opencensus.io/exporter/stackdriver"
+	"contrib.go.opencensus.io/exporter/stackdriver/propagation"
 	"github.com/monmaru/gae-graphql/infrastructure/datastore"
 	"github.com/monmaru/gae-graphql/interfaces/router"
+	"go.opencensus.io/plugin/ochttp"
+	"go.opencensus.io/trace"
 )
 
 func main() {
@@ -27,6 +31,16 @@ func register() error {
 	}
 
 	projID := os.Getenv("PROJECT_ID")
+
+	// Stackdriver Trace
+	exporter, err := stackdriver.NewExporter(stackdriver.Options{
+		ProjectID: projID,
+	})
+	if err != nil {
+		log.Fatal(err)
+	}
+	trace.RegisterExporter(exporter)
+
 	ud, err := datastore.NewUserDatastore(projID)
 	if err != nil {
 		return err
@@ -42,8 +56,6 @@ func register() error {
 		return err
 	}
 
-	http.Handle("/", router)
-
 	port := os.Getenv("PORT")
 	if port == "" {
 		port = "8080"
@@ -51,5 +63,12 @@ func register() error {
 	}
 
 	log.Printf("Listening on port %s", port)
-	return http.ListenAndServe(fmt.Sprintf(":%s", port), nil)
+	server := &http.Server{
+		Addr: fmt.Sprintf(":%s", port),
+		Handler: &ochttp.Handler{
+			Handler:     router,
+			Propagation: &propagation.HTTPFormat{},
+		},
+	}
+	return server.ListenAndServe()
 }
