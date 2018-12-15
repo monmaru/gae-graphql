@@ -12,6 +12,7 @@ import (
 	"contrib.go.opencensus.io/exporter/stackdriver/propagation"
 	"github.com/monmaru/gae-graphql/infrastructure/datastore"
 	"github.com/monmaru/gae-graphql/interfaces/router"
+	mylog "github.com/monmaru/gae-graphql/library/log"
 	"go.opencensus.io/plugin/ochttp"
 	"go.opencensus.io/trace"
 )
@@ -30,14 +31,18 @@ func register() error {
 		}
 	}
 
-	projID := os.Getenv("PROJECT_ID")
+	if err := mylog.Init(); err != nil {
+		return err
+	}
+
+	projID := os.Getenv("GOOGLE_CLOUD_PROJECT")
 
 	// Stackdriver Trace
 	exporter, err := stackdriver.NewExporter(stackdriver.Options{
 		ProjectID: projID,
 	})
 	if err != nil {
-		log.Fatal(err)
+		return err
 	}
 	trace.RegisterExporter(exporter)
 

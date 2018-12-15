@@ -3,13 +3,12 @@ package gql
 import (
 	"context"
 	"errors"
-	"log"
 	"time"
 
 	"github.com/graph-gophers/dataloader"
 	"github.com/monmaru/gae-graphql/domain/model"
 	"github.com/monmaru/gae-graphql/domain/repository"
-	"github.com/monmaru/gae-graphql/library/profile"
+	"github.com/monmaru/gae-graphql/library/log"
 )
 
 type BatchKey string
@@ -22,20 +21,20 @@ const (
 
 func GetUsersBatchFunc(ur repository.UserRepository) dataloader.BatchFunc {
 	return func(ctx context.Context, keys dataloader.Keys) []*dataloader.Result {
-		defer profile.Duration(time.Now(), "[GetUsersBatchFunc]")
+		defer log.Duration(ctx, time.Now(), "[GetUsersBatchFunc]")
 		var strIDs []string
 		for _, key := range keys {
 			strID, ok := key.Raw().(string)
 			if !ok {
-				log.Println("invalid key value")
-				return handleError(errors.New("Invalid key value"))
+				return handleError(ctx, errors.New("Invalid key value"))
 			}
 			strIDs = append(strIDs, strID)
 		}
 
 		users, err := ur.GetMulti(ctx, strIDs)
 		if err != nil {
-			return handleError(err)
+			log.Errorf(ctx, err.Error())
+			return handleError(ctx, err)
 		}
 
 		var results []*dataloader.Result
@@ -47,26 +46,26 @@ func GetUsersBatchFunc(ur repository.UserRepository) dataloader.BatchFunc {
 			results = append(results, &result)
 		}
 
-		log.Printf("[GetUsersBatchFunc] batch size: %d", len(results))
+		log.Infof(ctx, "[GetUsersBatchFunc] batch size: %d", len(results))
 		return results
 	}
 }
 
 func CreateUsersBatchFunc(ur repository.UserRepository) dataloader.BatchFunc {
 	return func(ctx context.Context, keys dataloader.Keys) []*dataloader.Result {
-		defer profile.Duration(time.Now(), "[CreateUsersBatchFn]")
+		defer log.Duration(ctx, time.Now(), "[CreateUsersBatchFn]")
 		var users []*model.User
 		for _, key := range keys {
 			u, ok := key.Raw().(*model.User)
 			if !ok {
-				return handleError(errors.New("Invalid key value"))
+				return handleError(ctx, errors.New("Invalid key value"))
 			}
 			users = append(users, u)
 		}
 
 		savedUsers, err := ur.CreateMulti(ctx, users)
 		if err != nil {
-			return handleError(err)
+			return handleError(ctx, err)
 		}
 
 		var results []*dataloader.Result
@@ -78,27 +77,26 @@ func CreateUsersBatchFunc(ur repository.UserRepository) dataloader.BatchFunc {
 			results = append(results, &result)
 		}
 
-		log.Printf("[CreateUsersBatchFn] batch size: %d", len(results))
+		log.Infof(ctx, "[CreateUsersBatchFn] batch size: %d", len(results))
 		return results
 	}
 }
 
 func CreateBlogsBatchFunc(br repository.BlogRepository) dataloader.BatchFunc {
 	return func(ctx context.Context, keys dataloader.Keys) []*dataloader.Result {
-		defer profile.Duration(time.Now(), "[CreateBlogsBatchFn]")
+		defer log.Duration(ctx, time.Now(), "[CreateBlogsBatchFn]")
 		var blogs []*model.Blog
 		for _, key := range keys {
 			b, ok := key.Raw().(*model.Blog)
 			if !ok {
-				return handleError(errors.New("Invalid key value"))
+				return handleError(ctx, errors.New("Invalid key value"))
 			}
 			blogs = append(blogs, b)
 		}
 
 		savedBlogs, err := br.CreateMulti(ctx, blogs)
 		if err != nil {
-			log.Println(err.Error())
-			return handleError(err)
+			return handleError(ctx, err)
 		}
 
 		var results []*dataloader.Result
@@ -110,12 +108,13 @@ func CreateBlogsBatchFunc(br repository.BlogRepository) dataloader.BatchFunc {
 			results = append(results, &result)
 		}
 
-		log.Printf("[CreateBlogsBatchFn] batch size: %d", len(results))
+		log.Infof(ctx, "[CreateBlogsBatchFn] batch size: %d", len(results))
 		return results
 	}
 }
 
-func handleError(err error) []*dataloader.Result {
+func handleError(ctx context.Context, err error) []*dataloader.Result {
+	log.Errorf(ctx, err.Error())
 	var results []*dataloader.Result
 	var result dataloader.Result
 	result.Error = err

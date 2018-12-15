@@ -18,16 +18,16 @@ func Build(ur repository.UserRepository, br repository.BlogRepository) (http.Han
 		return nil, err
 	}
 
-	injector := middleware.NewInjector(ur, br)
+	di := middleware.NewInjector(ur, br)
 	usecase := usecase.NewGraphQLUsecae(schema)
 
 	router.Path("/ping").HandlerFunc(handler.Pong).Methods(http.MethodGet)
 	router.Path("/api/graphql").
-		Handler(middleware.Timetrack(injector.Inject(handler.API(usecase)))).
+		Handler(di.Inject(handler.API(usecase))).
 		Methods(http.MethodPost)
 	router.Path("/graphiql").
-		Handler(middleware.Timetrack(injector.Inject(handler.GraphiQL(&schema))))
+		Handler(di.Inject(handler.GraphiQL(&schema)))
 	router.Path("/playground").
-		Handler(middleware.Timetrack(injector.Inject(handler.Playground(&schema))))
+		Handler(di.Inject(handler.Playground(&schema)))
 	return router, nil
 }

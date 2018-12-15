@@ -8,7 +8,7 @@ import (
 	"github.com/graphql-go/graphql"
 	"github.com/monmaru/gae-graphql/domain/model"
 	"github.com/monmaru/gae-graphql/domain/repository"
-	"github.com/monmaru/gae-graphql/library/profile"
+	"github.com/monmaru/gae-graphql/library/log"
 )
 
 type resolver interface {
@@ -91,8 +91,8 @@ func newResolver(ur repository.UserRepository, br repository.BlogRepository) res
 }
 
 func (r *graphQLResolver) createUser(params graphql.ResolveParams) (interface{}, error) {
-	defer profile.Duration(time.Now(), "[graphQLResolver.createUser]")
 	ctx := params.Context
+	defer log.Duration(ctx, time.Now(), "[graphQLResolver.createUser]")
 	name, _ := params.Args["name"].(string)
 	email, _ := params.Args["email"].(string)
 	user := &model.User{
@@ -103,8 +103,8 @@ func (r *graphQLResolver) createUser(params graphql.ResolveParams) (interface{},
 }
 
 func (r *graphQLResolver) getUser(params graphql.ResolveParams) (interface{}, error) {
-	defer profile.Duration(time.Now(), "[graphQLResolver.getUser]")
 	ctx := params.Context
+	defer log.Duration(ctx, time.Now(), "[graphQLResolver.getUser]")
 	if strID, ok := params.Args["id"].(string); ok {
 		return r.ur.Get(ctx, strID)
 	}
@@ -112,8 +112,8 @@ func (r *graphQLResolver) getUser(params graphql.ResolveParams) (interface{}, er
 }
 
 func (r *graphQLResolver) createBlog(params graphql.ResolveParams) (interface{}, error) {
-	defer profile.Duration(time.Now(), "[graphQLResolver.createBlog]")
 	ctx := params.Context
+	defer log.Duration(ctx, time.Now(), "[graphQLResolver.createBlog]")
 	title, _ := params.Args["title"].(string)
 	content, _ := params.Args["content"].(string)
 	userID, _ := params.Args["userId"].(string)
@@ -127,8 +127,8 @@ func (r *graphQLResolver) createBlog(params graphql.ResolveParams) (interface{},
 }
 
 func (r *graphQLResolver) queryBlogs(params graphql.ResolveParams) (interface{}, error) {
-	defer profile.Duration(time.Now(), "[graphQLResolver.queryBlogs]")
 	ctx := params.Context
+	defer log.Duration(ctx, time.Now(), "[graphQLResolver.queryBlogs]")
 	query := r.br.NewQuery()
 	query = query.Order("-CreatedAt")
 	if limit, ok := params.Args["limit"].(int); ok {
@@ -141,8 +141,8 @@ func (r *graphQLResolver) queryBlogs(params graphql.ResolveParams) (interface{},
 }
 
 func (r *graphQLResolver) queryBlogsByUser(params graphql.ResolveParams) (interface{}, error) {
-	defer profile.Duration(time.Now(), "[graphQLResolver.queryBlogsByUser]")
 	ctx := params.Context
+	defer log.Duration(ctx, time.Now(), "[graphQLResolver.queryBlogsByUser]")
 	query := r.br.NewQuery()
 	query = query.Order("-CreatedAt")
 	if limit, ok := params.Args["limit"].(int); ok {
@@ -158,27 +158,29 @@ func (r *graphQLResolver) queryBlogsByUser(params graphql.ResolveParams) (interf
 }
 
 func (r *graphQLResolver) getUsersBatch(params graphql.ResolveParams) (interface{}, error) {
-	defer profile.Duration(time.Now(), "[graphQLResolver.getUsersBatch]")
+	ctx := params.Context
+	defer log.Duration(ctx, time.Now(), "[graphQLResolver.getUsersBatch]")
 	strID, ok := params.Args["id"].(string)
 	if !ok {
 		return nil, errors.New("invalid id")
 	}
 
 	key := newGetUserKey(strID)
-	v := params.Context.Value(GetUsersKey)
+	v := ctx.Value(GetUsersKey)
 	loader, ok := v.(*dataloader.Loader)
 	if !ok {
 		return nil, errors.New("loader is empty")
 	}
 
-	thunk := loader.Load(params.Context, key)
+	thunk := loader.Load(ctx, key)
 	return func() (interface{}, error) {
 		return thunk()
 	}, nil
 }
 
 func (r *graphQLResolver) createUsersBatch(params graphql.ResolveParams) (interface{}, error) {
-	defer profile.Duration(time.Now(), "[graphQLResolver.createUsersBatch]")
+	ctx := params.Context
+	defer log.Duration(ctx, time.Now(), "[graphQLResolver.createUsersBatch]")
 	name, _ := params.Args["name"].(string)
 	email, _ := params.Args["email"].(string)
 	user := &model.User{
@@ -187,20 +189,21 @@ func (r *graphQLResolver) createUsersBatch(params graphql.ResolveParams) (interf
 	}
 
 	key := newCreateUserKey(user.Name+user.EMail, user)
-	v := params.Context.Value(CreateUsersKey)
+	v := ctx.Value(CreateUsersKey)
 	loader, ok := v.(*dataloader.Loader)
 	if !ok {
 		return nil, errors.New("loader is empty")
 	}
 
-	thunk := loader.Load(params.Context, key)
+	thunk := loader.Load(ctx, key)
 	return func() (interface{}, error) {
 		return thunk()
 	}, nil
 }
 
 func (r *graphQLResolver) createBlogsBatch(params graphql.ResolveParams) (interface{}, error) {
-	defer profile.Duration(time.Now(), "[graphQLResolver.createBlogsBatch]")
+	ctx := params.Context
+	defer log.Duration(ctx, time.Now(), "[graphQLResolver.createBlogsBatch]")
 	title, _ := params.Args["title"].(string)
 	content, _ := params.Args["content"].(string)
 	userID, _ := params.Args["userId"].(string)
@@ -212,13 +215,13 @@ func (r *graphQLResolver) createBlogsBatch(params graphql.ResolveParams) (interf
 	}
 
 	key := newCreateBlogKey(blog.UserID+blog.Title, blog)
-	v := params.Context.Value(CreateBlogsKey)
+	v := ctx.Value(CreateBlogsKey)
 	loader, ok := v.(*dataloader.Loader)
 	if !ok {
 		return nil, errors.New("loader is empty")
 	}
 
-	thunk := loader.Load(params.Context, key)
+	thunk := loader.Load(ctx, key)
 	return func() (interface{}, error) {
 		return thunk()
 	}, nil

@@ -5,7 +5,7 @@ import (
 	"time"
 
 	"github.com/graphql-go/graphql"
-	"github.com/monmaru/gae-graphql/library/profile"
+	"github.com/monmaru/gae-graphql/library/log"
 )
 
 type GraphQLUsecase interface {
@@ -21,7 +21,7 @@ type graphQLInteractor struct {
 }
 
 func (i *graphQLInteractor) Do(ctx context.Context, body string) interface{} {
-	defer profile.Duration(time.Now(), "[graphQLInteractor.Do]")
+	defer log.Duration(ctx, time.Now(), "[graphQLInteractor.Do]")
 	return graphql.Do(graphql.Params{
 		Schema:        i.schema,
 		RequestString: string(body),
