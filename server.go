@@ -41,7 +41,7 @@ func main() {
 	}
 	trace.RegisterExporter(exporter)
 
-	if err := mylog.Init(); err != nil {
+	if err := mylog.Init(os.Getenv("IS_LOCAL") != ""); err != nil {
 		log.Fatal(err)
 	}
 	defer mylog.Close()

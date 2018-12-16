@@ -21,12 +21,12 @@ var (
 	moduleID  string
 	projectID string
 	versionID string
-	localDev  bool
+	local     bool
 )
 
-func Init() error {
-	if os.Getenv("LOCAL_DEV") != "" {
-		localDev = true
+func Init(isLocal bool) error {
+	local = isLocal
+	if local {
 		return nil
 	}
 
@@ -87,7 +87,7 @@ func Duration(ctx context.Context, invocation time.Time, name string) {
 }
 
 func printf(ctx context.Context, severity logging.Severity, format string, args ...interface{}) {
-	if localDev {
+	if local {
 		log.Printf(format, args...)
 		return
 	}
