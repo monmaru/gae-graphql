@@ -14,12 +14,8 @@ type UserDatastore struct {
 	kind   string
 }
 
-func NewUserDatastore(projID string) (*UserDatastore, error) {
-	client, err := newDataStoreClient(context.Background(), projID)
-	if err != nil {
-		return nil, err
-	}
-	return &UserDatastore{client: client, kind: "User"}, nil
+func NewUserDatastore(client *datastore.Client) *UserDatastore {
+	return &UserDatastore{client: client, kind: "User"}
 }
 
 func (u *UserDatastore) Create(ctx context.Context, user *model.User) (*model.User, error) {

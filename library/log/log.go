@@ -47,6 +47,16 @@ func Init() error {
 	return nil
 }
 
+func Close() {
+	if client == nil {
+		return
+	}
+
+	if err := client.Close(); err != nil {
+		log.Printf("logging clinet failed to close : %s", err)
+	}
+}
+
 func WithContext(ctx context.Context, r *http.Request) context.Context {
 	return context.WithValue(ctx, ctxKey, r)
 }
@@ -84,7 +94,7 @@ func printf(ctx context.Context, severity logging.Severity, format string, args 
 
 	r, ok := ctx.Value(ctxKey).(*http.Request)
 	if !ok {
-		log.Fatal("unexpected context. It doesn't have *http.Request")
+		log.Printf("unexpected context. It doesn't have *http.Request")
 	}
 
 	traceContext := r.Header.Get("X-Cloud-Trace-Context")

@@ -14,12 +14,8 @@ type BlogDatastore struct {
 	kind   string
 }
 
-func NewBlogDatastore(projID string) (*BlogDatastore, error) {
-	client, err := newDataStoreClient(context.Background(), projID)
-	if err != nil {
-		return nil, err
-	}
-	return &BlogDatastore{client: client, kind: "Blog"}, nil
+func NewBlogDatastore(client *datastore.Client) *BlogDatastore {
+	return &BlogDatastore{client: client, kind: "Blog"}
 }
 
 func (b *BlogDatastore) Create(ctx context.Context, blog *model.Blog) (*model.Blog, error) {

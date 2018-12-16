@@ -12,19 +12,23 @@ import (
 	"github.com/monmaru/gae-graphql/library/log"
 )
 
-type Injector struct {
+type Injector interface {
+	Inject(next http.Handler) http.Handler
+}
+
+type contextInjector struct {
 	ur repository.UserRepository
 	br repository.BlogRepository
 }
 
-func NewInjector(ur repository.UserRepository, br repository.BlogRepository) *Injector {
-	return &Injector{
+func NewInjector(ur repository.UserRepository, br repository.BlogRepository) Injector {
+	return &contextInjector{
 		ur: ur,
 		br: br,
 	}
 }
 
-func (i *Injector) Inject(next http.Handler) http.Handler {
+func (i *contextInjector) Inject(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := i.setupContext(r)
 		defer log.Duration(ctx, time.Now(), fmt.Sprintf("[%s]", r.URL.Path))
@@ -33,7 +37,7 @@ func (i *Injector) Inject(next http.Handler) http.Handler {
 	})
 }
 
-func (i *Injector) setupContext(r *http.Request) context.Context {
+func (i *contextInjector) setupContext(r *http.Request) context.Context {
 	ctx := r.Context()
 	ctx = context.WithValue(
 		ctx,

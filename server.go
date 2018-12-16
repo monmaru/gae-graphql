@@ -1,16 +1,21 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"log"
 	"net/http"
 	"os"
+	"os/signal"
 	"strconv"
+	"syscall"
+	"time"
 
+	"cloud.google.com/go/datastore"
 	"cloud.google.com/go/profiler"
 	"contrib.go.opencensus.io/exporter/stackdriver"
 	"contrib.go.opencensus.io/exporter/stackdriver/propagation"
-	"github.com/monmaru/gae-graphql/infrastructure/datastore"
+	mydatastore "github.com/monmaru/gae-graphql/infrastructure/datastore"
 	"github.com/monmaru/gae-graphql/interfaces/router"
 	mylog "github.com/monmaru/gae-graphql/library/log"
 	"go.opencensus.io/plugin/ochttp"
@@ -18,21 +23,11 @@ import (
 )
 
 func main() {
-	if err := register(); err != nil {
-		log.Fatal(err)
-	}
-}
-
-func register() error {
 	// Stackdriver Profiler
 	if enabled, _ := strconv.ParseBool(os.Getenv("PROFILE_ENABLED")); enabled {
 		if err := profiler.Start(profiler.Config{DebugLogging: true}); err != nil {
-			return err
+			log.Fatal(err)
 		}
-	}
-
-	if err := mylog.Init(); err != nil {
-		return err
 	}
 
 	projID := os.Getenv("GOOGLE_CLOUD_PROJECT")
@@ -42,23 +37,30 @@ func register() error {
 		ProjectID: projID,
 	})
 	if err != nil {
-		return err
+		log.Fatal(err)
 	}
 	trace.RegisterExporter(exporter)
 
-	ud, err := datastore.NewUserDatastore(projID)
-	if err != nil {
-		return err
+	if err := mylog.Init(); err != nil {
+		log.Fatal(err)
 	}
+	defer mylog.Close()
 
-	bd, err := datastore.NewBlogDatastore(projID)
+	datastoreClient, err := datastore.NewClient(context.Background(), projID)
 	if err != nil {
-		return err
+		log.Fatal(err)
 	}
+	defer func() {
+		if err := datastoreClient.Close(); err != nil {
+			log.Print(err)
+		}
+	}()
 
+	ud := mydatastore.NewUserDatastore(datastoreClient)
+	bd := mydatastore.NewBlogDatastore(datastoreClient)
 	router, err := router.Build(ud, bd)
 	if err != nil {
-		return err
+		log.Fatal(err)
 	}
 
 	port := os.Getenv("PORT")
@@ -67,7 +69,6 @@ func register() error {
 		log.Printf("Defaulting to port %s", port)
 	}
 
-	log.Printf("Listening on port %s", port)
 	server := &http.Server{
 		Addr: fmt.Sprintf(":%s", port),
 		Handler: &ochttp.Handler{
@@ -75,5 +76,23 @@ func register() error {
 			Propagation: &propagation.HTTPFormat{},
 		},
 	}
-	return server.ListenAndServe()
+
+	go func() {
+		if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+			log.Fatal(err)
+		}
+	}()
+
+	log.Printf("Listening on port %s", port)
+
+	sigCh := make(chan os.Signal, 1)
+	signal.Notify(sigCh, syscall.SIGTERM)
+	<-sigCh
+
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+	if err := server.Shutdown(ctx); err != nil {
+		log.Fatalf("graceful shutdown failure: %s", err)
+	}
+	log.Printf("graceful shutdown successfully")
 }
